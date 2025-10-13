@@ -1,0 +1,92 @@
+openapi: 3.1.0
+info:
+  title: GDS service catalogue fallback
+  version: 0.0.1
+  description: |
+    Fallback copy of the GOV.UK Design System service builder OpenAPI definition.
+    This is bundled with the frontend so we can continue to render forms when the
+    upstream specification is unavailable at runtime.
+servers:
+  - url: https://func-servicebuilder-api-int.azurewebsites.net
+paths:
+  /services/research-session-request:
+    post:
+      operationId: research-session-request
+      summary: Request support for a user research session
+      description: |
+        Share the essential context about your team and the users you want to speak to so that a researcher can help you plan the session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - teamName
+                - sessionGoal
+                - remoteOrInPerson
+              properties:
+                teamName:
+                  type: string
+                  title: What is the name of your team?
+                sessionGoal:
+                  type: string
+                  title: Describe what you need to learn from this session
+                  description: |
+                    Keep this to a short paragraph. Focus on the user needs or hypotheses you want to test so researchers can prioritise the work.
+                  format: textarea
+                preferredDate:
+                  type: string
+                  title: When would you like the session to take place?
+                remoteOrInPerson:
+                  type: string
+                  title: How will you run the session?
+                  enum:
+                    - remote
+                    - in-person
+                    - hybrid
+                  x-enum-descriptions:
+                    - Remote (video call)
+                    - In person
+                    - A mix of remote and in person
+  /services/accessibility-clinic:
+    post:
+      operationId: accessibility-clinic
+      summary: Book an accessibility clinic
+      description: |
+        Tell us about the service or product you want to review. Accessibility specialists will use this to plan the clinic.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serviceName
+                - serviceStage
+                - contactEmail
+              properties:
+                serviceName:
+                  type: string
+                  title: What is the name of the service?
+                serviceStage:
+                  type: string
+                  title: Which stage best describes your service?
+                  enum:
+                    - discovery
+                    - alpha
+                    - beta
+                    - live
+                  x-enum-descriptions:
+                    - Discovery
+                    - Alpha
+                    - Beta
+                    - Live
+                hasResearch:
+                  type: boolean
+                  title: Have you already run research with disabled people?
+                  description: This helps the team understand what support you might need during the clinic.
+                contactEmail:
+                  type: string
+                  title: Email address for the main contact
+                  description: We will only use this to arrange the clinic and share accessibility advice afterwards.
