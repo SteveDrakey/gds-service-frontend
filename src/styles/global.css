@@ -1,0 +1,23 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: 'GDS Transport', Arial, sans-serif;
+  background-color: #f3f2f1;
+}
+
+a {
+  color: #1d70b8;
+}
+
+a:hover {
+  color: #003078;
+}
+
+code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  background: #f3f2f1;
+  padding: 0.1rem 0.3rem;
+}
