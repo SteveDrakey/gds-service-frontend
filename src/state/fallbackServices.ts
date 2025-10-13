@@ -1,6 +1,9 @@
-import { ServiceDefinition } from '../types/service';
+import YAML from 'yaml';
+import { extractServicesFromOpenApi } from '../utils/serviceExtraction';
+import type { ServiceDefinition } from '../types/service';
+import fallbackSpecification from './fallback-openapi.v31.yaml?raw';
 
-export const fallbackServices: ServiceDefinition[] = [
+const manualFallbackServices: ServiceDefinition[] = [
   {
     slug: 'research-session-request',
     name: 'Request support for a user research session',
@@ -83,3 +86,25 @@ export const fallbackServices: ServiceDefinition[] = [
     ]
   }
 ];
+
+const buildFallbackServices = (): ServiceDefinition[] => {
+  try {
+    const parsed = YAML.parse(fallbackSpecification);
+    const services = extractServicesFromOpenApi(parsed).map((service) => ({
+      ...service,
+      source: 'fallback' as const
+    }));
+
+    if (services.length === 0) {
+      console.warn('The bundled fallback OpenAPI specification did not yield any services.');
+      return manualFallbackServices;
+    }
+
+    return services;
+  } catch (error) {
+    console.error('Failed to parse the bundled fallback OpenAPI specification.', error);
+    return manualFallbackServices;
+  }
+};
+
+export const fallbackServices = buildFallbackServices();
