@@ -1,0 +1,38 @@
+{
+  "name": "gds-service-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Opinionated GOV.UK Design System themed service prototype built with React and Vite",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "govuk",
+    "gds",
+    "design-system",
+    "react",
+    "vite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "classnames": "^2.5.1",
+    "govuk-frontend": "^5.13.0",
+    "govuk-react": "^0.10.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4",
+    "styled-components": "^6.1.15"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "@types/styled-components": "^5.1.34",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9"
+  }
+}
