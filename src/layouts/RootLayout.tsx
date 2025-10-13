@@ -70,20 +70,18 @@ export const RootLayout = () => (
     <SkipLink href="#main-content">Skip to main content</SkipLink>
     <TopNav
       company={<TopNav.IconTitle icon={<CrownIcon height="32" width="36" />}>GOV.UK</TopNav.IconTitle>}
-      serviceTitle={<span>Service design starter</span>}
+      serviceTitle={<span>Service builder explorer</span>}
     >
       <NavigationLink as={NavLink} to="/" end>
-        Overview
+        Services
       </NavigationLink>
       <NavigationLink as={NavLink} to="/about-gds">
         About GDS
       </NavigationLink>
-      <NavigationLink as={NavLink} to="/apply">
-        Apply
-      </NavigationLink>
     </TopNav>
     <PhaseBanner level="beta">
-      This prototype shows how to follow the GOV.UK Design System from first principles.
+      Forms are generated directly from the Service Builder OpenAPI definition and follow the GOV.UK Design
+      System by default.
     </PhaseBanner>
     <StyledMain id="main-content">
       <ContentContainer>

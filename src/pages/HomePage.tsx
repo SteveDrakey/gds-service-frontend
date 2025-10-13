@@ -1,58 +1,79 @@
 import { Link as RouterLink } from 'react-router-dom';
+import styled from 'styled-components';
 import {
   Button,
+  GridCol,
+  GridRow,
   H1,
   H2,
+  InsetText,
   LeadParagraph,
   Paragraph,
-  InsetText,
-  UnorderedList,
-  ListItem,
-  GridRow,
-  GridCol
+  Tag,
+  WarningText
 } from 'govuk-react';
+import { useServiceDefinitions } from '../state/ServiceDefinitionsContext';
 
-export const HomePage = () => (
-  <div>
-    <H1>Opinionated GOV.UK starter</H1>
-    <LeadParagraph>
-      This Vite + React example shows how to structure a small service so that every page honours the
-      GOV.UK Design System (GDS) and Service Standard.
-    </LeadParagraph>
-    <GridRow>
-      <GridCol setWidth="two-thirds">
-        <Paragraph>
-          {[
-            'The layout, typography and components all come from `govuk-react` and `govuk-frontend`.',
-            'The goal is to demonstrate the golden path: start with research, express content in plain English, and build an accessible multi-step form.'
-          ].join(' ')}
-        </Paragraph>
-        <Paragraph>
-          Use the navigation to explore how the GDS principles are applied. When you are ready, work through the
-          sample application form to see progressive disclosure in action.
-        </Paragraph>
-        <Button as={RouterLink} to="/apply">
-          Start the sample form
-        </Button>
-      </GridCol>
-      <GridCol setWidth="one-third">
-        <InsetText>
-          <strong>Why Vite?</strong> Fast builds and instant feedback make it easier to iterate quickly while
-          collaborating with designers and researchers.
-        </InsetText>
-      </GridCol>
-    </GridRow>
-    <H2>GDS in practice</H2>
-    <UnorderedList>
-      <ListItem>Use real user needs to frame every piece of content.</ListItem>
-      <ListItem>Design journeys that support accessibility from the first sketch.</ListItem>
-      <ListItem>Keep forms short, confirm answers, and avoid hidden validation surprises.</ListItem>
-    </UnorderedList>
-    <Paragraph>
-      {[
-        'The GOV.UK Design System is more than styles. It is an agreement about language, accessibility, usability and inclusive patterns.',
-        'Read the guidance whenever you introduce new journeys: [design-system.service.gov.uk](https://design-system.service.gov.uk).'
-      ].join(' ')}
-    </Paragraph>
-  </div>
-);
+const ServiceList = styled.div`
+  display: grid;
+  gap: 2rem;
+  margin-top: 2rem;
+`;
+
+const ServiceCard = styled.article`
+  border: 1px solid #b1b4b6;
+  border-left: 5px solid #1d70b8;
+  padding: 1.5rem;
+  background: #ffffff;
+  display: grid;
+  gap: 1rem;
+`;
+
+export const HomePage = () => {
+  const { services, loading, error } = useServiceDefinitions();
+
+  return (
+    <div>
+      <H1>Service catalogue</H1>
+      <LeadParagraph>
+        Each service listed below is inferred directly from the OpenAPI specification so product teams always
+        work from the latest source of truth.
+      </LeadParagraph>
+      <GridRow>
+        <GridCol setWidth="two-thirds">
+          <Paragraph>
+            Select a service to answer the questions one page at a time. The form follows GOV.UK Design System
+            conventions for layout, spacing and language so users get a consistent experience.
+          </Paragraph>
+        </GridCol>
+        <GridCol setWidth="one-third">
+          <InsetText>
+            The prototype fetches the OpenAPI document on load. Every time the definition changes, the questions
+            update automatically without redeploying the frontend.
+          </InsetText>
+        </GridCol>
+      </GridRow>
+      {error && (
+        <WarningText>
+          {error} The fallback service definitions are shown below until the specification becomes available.
+        </WarningText>
+      )}
+      {loading ? (
+        <Paragraph>Loading services…</Paragraph>
+      ) : (
+        <ServiceList>
+          {services.map((service) => (
+            <ServiceCard key={service.slug}>
+              <H2>{service.name}</H2>
+              {service.summary && <Paragraph>{service.summary}</Paragraph>}
+              {service.source === 'fallback' && <Tag tint="YELLOW">Fallback data</Tag>}
+              <Button as={RouterLink} to={`/services/${service.slug}/questions/0`}>
+                Start now
+              </Button>
+            </ServiceCard>
+          ))}
+        </ServiceList>
+      )}
+    </div>
+  );
+};
