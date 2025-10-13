@@ -117,6 +117,10 @@ const inferQuestionType = (schema: any): ServiceQuestion['type'] => {
     return 'checkbox';
   }
 
+  if (schema.format === 'date') {
+    return 'date';
+  }
+
   if (schema.type === 'number' || schema.type === 'integer') {
     return 'number';
   }

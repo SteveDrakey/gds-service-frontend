@@ -1,4 +1,10 @@
-export type QuestionType = 'text' | 'textarea' | 'select' | 'checkbox' | 'number';
+export type QuestionType = 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'date';
+
+export interface DateAnswerValue {
+  day?: string;
+  month?: string;
+  year?: string;
+}
 
 export interface ServiceQuestionOption {
   value: string;

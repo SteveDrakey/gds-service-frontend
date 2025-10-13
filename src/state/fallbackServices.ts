@@ -37,8 +37,8 @@ const manualFallbackServices: ServiceDefinition[] = [
       {
         id: 'contact.dob',
         label: 'Date of birth',
-        description: 'For example, 31/03/1970',
-        type: 'text',
+        description: 'For example, 31 3 1970',
+        type: 'date',
         required: false
       },
       {
@@ -67,7 +67,8 @@ const manualFallbackServices: ServiceDefinition[] = [
       {
         id: 'date',
         label: 'Date of missed collection',
-        type: 'text',
+        description: 'For example, 24 3 2024',
+        type: 'date',
         required: true
       },
       {
