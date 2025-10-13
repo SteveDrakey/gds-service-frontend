@@ -9,7 +9,7 @@ export const NotFoundPage = () => (
       follow the journey again.
     </Paragraph>
     <Button as={RouterLink} to="/">
-      Go back to the overview
+      Go back to the services
     </Button>
   </div>
 );

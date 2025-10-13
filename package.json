@@ -25,7 +25,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4",
-    "styled-components": "^6.1.15"
+    "styled-components": "^6.1.15",
+    "yaml": "^2.6.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",

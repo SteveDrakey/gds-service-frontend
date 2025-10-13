@@ -1,17 +1,16 @@
 import type { ReactElement } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from './pages/HomePage';
 import { AboutGdsPage } from './pages/AboutGdsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { StepOnePage } from './pages/form/StepOnePage';
-import { StepTwoPage } from './pages/form/StepTwoPage';
-import { ReviewPage } from './pages/form/ReviewPage';
-import { FormLayout } from './layouts/FormLayout';
-import { FormProvider } from './state/FormContext';
+import { ServiceFormRoute } from './pages/services/ServiceFormRoute';
+import { ServiceQuestionPage } from './pages/services/ServiceQuestionPage';
+import { ServiceSummaryPage } from './pages/services/ServiceSummaryPage';
+import { ServiceDefinitionsProvider } from './state/ServiceDefinitionsContext';
 
 const withProviders = (element: ReactElement) => (
-  <FormProvider>{element}</FormProvider>
+  <ServiceDefinitionsProvider>{element}</ServiceDefinitionsProvider>
 );
 
 export const router = createBrowserRouter([
@@ -22,12 +21,12 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'about-gds', element: <AboutGdsPage /> },
       {
-        path: 'apply',
-        element: <FormLayout />,
+        path: 'services/:serviceSlug',
+        element: <ServiceFormRoute />,
         children: [
-          { index: true, element: <StepOnePage /> },
-          { path: 'service', element: <StepTwoPage /> },
-          { path: 'check', element: <ReviewPage /> }
+          { index: true, element: <Navigate to="questions/0" replace /> },
+          { path: 'questions/:questionIndex', element: <ServiceQuestionPage /> },
+          { path: 'summary', element: <ServiceSummaryPage /> }
         ]
       },
       { path: '*', element: <NotFoundPage /> }
