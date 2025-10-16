@@ -1,0 +1,197 @@
+openapi: '3.1.1'
+info:
+  title: LCC dynamics Service Request API  (INT)
+  description: Highly available API for submitting service requests that will be stored in dynamics 365 and also (where relevant) passed on to the 3rd party systems that manage the type of request in common
+  version: 1.0.0.3
+servers:
+  - url: https://func-servicebuilder-api-int.azurewebsites.net
+paths:
+  /api/service-requests/missed-bin/v1:
+    post:
+      summary: Report a missed bin
+      description: Use this service to report a missed bin
+      operationId: Create-missed-bin-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - contact
+                - address
+                - date
+                - case.title
+              type: object
+              properties:
+                contact:
+                  $ref: '#/components/schemas/contact'
+                bin-type:
+                  enum:
+                    - Black
+                    - Green
+                    - Brown
+                  type: string
+                  description: Type of missed bin
+                address:
+                  type: string
+                  description: 'Address of the missed bin '
+                date:
+                  type: string
+                  description: Date of missed collection
+                  format: date
+                case.title:
+                  type: string
+                  description: Case title
+                case.ticketnumber:
+                  type: string
+                  description: External ref number
+                case.description:
+                  type: string
+                  description: Notes
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/missed-bin/v1/{jobId}/status':
+    get:
+      summary: Report a missed bin
+      description: Use this service to report a missed bin
+      operationId: Get-missed-bin-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/report-asb/v1:
+    post:
+      summary: Report Anti-Social Behaviour
+      description: Use this service to report anti-social behaviour
+      operationId: Create-report-asb-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - reported-by-name
+                - address
+                - notes
+              type: object
+              properties:
+                reported-by-name:
+                  type: string
+                  description: Reporting contact
+                report-against-name:
+                  type: string
+                  description: Reported contact - if known
+                address:
+                  type: string
+                  description: Address of reported behaviour
+                notes:
+                  type: string
+                  description: Notes
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/report-asb/v1/{jobId}/status':
+    get:
+      summary: Report Anti-Social Behaviour
+      description: Use this service to report anti-social behaviour
+      operationId: Get-report-asb-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+components:
+  schemas:
+    contact:
+      type: object
+      properties:
+        first-name:
+          type: string
+          description: Given name
+        last-name:
+          type: string
+          description: Surname
+        email:
+          type: string
+          description: eMail address
+        telephone:
+          type: string
+          description: Phone number
+        dob:
+          type: string
+          description: Date of Birth
+          format: date
+        address:
+          type: string
+          description: Home address
+      additionalProperties: false
+    serviceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    serviceRequestStatus:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          enum:
+            - Running
+            - Succeeded
+            - Failed
+          type: string
+        result:
+          $ref: '#/components/schemas/serviceRequest'
+        errorMessage:
+          type: string
+  securitySchemes:
+    api_key:
+      type: apiKey
+      description: 'App key for S2S authentication, passed on the query string'
+      name: code
+      in: query
+security:
+  - api_key: []
