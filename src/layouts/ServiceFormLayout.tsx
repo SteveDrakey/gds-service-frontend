@@ -1,37 +1,8 @@
 import { ReactNode } from 'react';
 import { Link as RouterLink, useLocation, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  BackLink,
-  H1,
-  InsetText,
-  ListItem,
-  OrderedList,
-  Paragraph,
-  Tag,
-  WarningText
-} from 'govuk-react';
+import { BackLink, H1, InsetText, Paragraph, WarningText } from 'govuk-react';
 import { useServiceForm } from '../state/ServiceFormContext';
-
-const StepList = styled(OrderedList)`
-  margin-bottom: 2rem;
-`;
-
-const StepItem = styled(ListItem)<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: ${({ $active }) => ($active ? 'bold' : 'normal')};
-`;
-
-const StepLink = styled(RouterLink)`
-  color: inherit;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
 
 const Section = styled.section`
   display: grid;
@@ -52,18 +23,21 @@ export const ServiceFormLayout = ({ specificationError, children }: ServiceFormL
   const relativePath = location.pathname.startsWith(`${basePath}/`)
     ? location.pathname.slice(basePath.length + 1)
     : '';
+  const questionMatch = relativePath.match(/^questions\/(\d+)$/);
+  const currentQuestionIndex = questionMatch ? Number(questionMatch[1]) : undefined;
 
-  const steps = [
-    ...service.questions.map((question, index) => ({
-      path: `questions/${index}`,
-      label: question.label
-    })),
-    { path: 'summary', label: 'Check answers' }
-  ];
+  let previousPath = '/';
 
-  const activeIndex = steps.findIndex((step) => step.path === relativePath);
-  const previousPath =
-    activeIndex > 0 ? `${basePath}/${steps[activeIndex - 1].path}` : activeIndex === -1 ? basePath : '/';
+  if (relativePath === 'summary') {
+    previousPath =
+      service.questions.length > 0
+        ? `${basePath}/questions/${service.questions.length - 1}`
+        : basePath;
+  } else if (typeof currentQuestionIndex === 'number') {
+    previousPath = currentQuestionIndex > 0 ? `${basePath}/questions/${currentQuestionIndex - 1}` : '/';
+  } else {
+    previousPath = basePath;
+  }
 
   return (
     <Section aria-labelledby="service-form-title">
@@ -81,26 +55,6 @@ export const ServiceFormLayout = ({ specificationError, children }: ServiceFormL
           We could not reach the live specification. Showing the fallback definition instead.
         </WarningText>
       )}
-      <nav aria-label="Service steps">
-        <StepList>
-          {steps.map((step, index) => {
-            const stepHref = `${basePath}/${step.path}`;
-            const isActive = step.path === relativePath;
-            const isComplete = activeIndex > index;
-
-            return (
-              <StepItem key={step.path} $active={isActive}>
-                {(isActive || isComplete) && (
-                  <Tag tint={isActive ? 'BLUE' : 'GREEN'}>{isActive ? 'In progress' : 'Done'}</Tag>
-                )}
-                <StepLink to={stepHref} aria-current={isActive ? 'step' : undefined}>
-                  {index + 1}. {step.label}
-                </StepLink>
-              </StepItem>
-            );
-          })}
-        </StepList>
-      </nav>
       {children}
     </Section>
   );

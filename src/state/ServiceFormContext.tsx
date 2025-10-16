@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import type { ServiceDefinition, ServiceQuestion } from '../types/service';
+import type { DateAnswerValue, ServiceDefinition, ServiceQuestion } from '../types/service';
 
 interface ServiceFormContextValue {
   service: ServiceDefinition;
@@ -22,6 +22,8 @@ const defaultValueForQuestion = (question: ServiceQuestion): unknown => {
   switch (question.type) {
     case 'checkbox':
       return false;
+    case 'date':
+      return { day: '', month: '', year: '' } satisfies DateAnswerValue;
     default:
       return '';
   }

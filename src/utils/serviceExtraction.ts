@@ -12,7 +12,7 @@ const slugify = (value: string) =>
 const sentenceCase = (value: string) =>
   value
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[-_]+/g, ' ')
+    .replace(/[._-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/^./, (match) => match.toUpperCase());
@@ -115,6 +115,10 @@ const inferQuestionType = (schema: any): ServiceQuestion['type'] => {
 
   if (schema.type === 'boolean') {
     return 'checkbox';
+  }
+
+  if (schema.format === 'date') {
+    return 'date';
   }
 
   if (schema.type === 'number' || schema.type === 'integer') {

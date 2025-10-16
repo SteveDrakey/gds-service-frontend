@@ -194,4 +194,4 @@ components:
       name: code
       in: query
 security:
-  - api_key: [ ]
+  - api_key: []
