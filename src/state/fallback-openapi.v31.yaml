@@ -1,53 +1,87 @@
 openapi: '3.1.1'
 info:
-  title: LCC dynamics Service Request API  (INT)
+  title: LCC dynamics Service Request API  (DEV)
   description: Highly available API for submitting service requests that will be stored in dynamics 365 and also (where relevant) passed on to the 3rd party systems that manage the type of request in common
-  version: 1.0.0.3
+  version: 1.0.0.0
+
+x-gds:
+  formDefaults:
+    oneQuestionPerPage: true
+    errorStyle: inline
+    fieldMetaRequired:
+      - title
+      - fieldType
+      - required
+      - errorMessage
+      - page
+      - order
+  fieldTypes:
+    text: { htmlInput: text }
+    date: { htmlInput: date }
+    radio: { htmlInput: radio }
+    checkbox: { htmlInput: checkbox }
+    select: { htmlInput: select }
+
 servers:
-  - url: https://func-servicebuilder-api-int.azurewebsites.net
+  - url: https://func-servicebuilder-api-sd-dev.azurewebsites.net
 paths:
-  /api/service-requests/missed-bin/v1:
+  /api/service-requests/housing-application/v1:
     post:
-      summary: Report a missed bin
-      description: Use this service to report a missed bin
-      operationId: Create-missed-bin-ServiceRequest
+      summary: Housing Application
+      description: A new service
+      operationId: Create-housing-application-ServiceRequest
       requestBody:
         description: JSON request body containing details of the new service request
         content:
           application/json:
             schema:
               required:
-                - contact
-                - address
-                - date
-                - case.title
+                - describethecustomerssituation
+                - havereferencenumber
+                - trigger
               type: object
               properties:
-                contact:
-                  $ref: '#/components/schemas/contact'
-                bin-type:
+                describethecustomerssituation:
+                  type: string
+                  description: Please describe the customer's situation and what has brought them in today
+                havereferencenumber:
                   enum:
-                    - Black
-                    - Green
-                    - Brown
+                    - Yes
+                    - No
                   type: string
-                  description: Type of missed bin
-                address:
+                  description: Do they have a Customer Reference Number? (previously called Bidding Number)
+                referencenumber:
                   type: string
-                  description: 'Address of the missed bin '
-                date:
+                  description: 'If yes, please provide it here'
+                hasanappointmentbeenmade:
+                  enum:
+                    - Yes
+                    - No
                   type: string
-                  description: Date of missed collection
-                  format: date
-                case.title:
+                  description: 'If no, has an appointment been made to complete a housing application?'
+                trigger:
+                  enum:
+                    - Reset application login details
+                    - Supported to complete application
+                    - Proofs or documents received
+                    - Priority extension
+                    - Application renewal
+                    - Change in housing situation
+                    - Chasing application status
+                    - Unhappy with LHO decision
+                    - General advice
                   type: string
-                  description: Case title
-                case.ticketnumber:
+                  description: What is the customer's enquiry about their housing application?
+                actiontakenbycso:
+                  enum:
+                    - Sent an 'Housing application' work queue in CATS to LHO Assessors
+                    - Sent an 'Housing application' work queue in CATS to Housing office
+                    - Advice and guidance given by CSO - no work queue needed
+                    - CSO has spoken directly to LHO - no work queue needed
+                    - Appointment booked
+                    - Action completed in Abritas
                   type: string
-                  description: External ref number
-                case.description:
-                  type: string
-                  description: Notes
+                  description: Action taken by CSO
               additionalProperties: false
         required: true
       responses:
@@ -63,11 +97,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/serviceRequestStatus'
-  '/api/service-requests/missed-bin/v1/{jobId}/status':
+  '/api/service-requests/housing-application/v1/{jobId}/status':
     get:
-      summary: Report a missed bin
-      description: Use this service to report a missed bin
-      operationId: Get-missed-bin-ServiceRequestStatus
+      summary: Housing Application
+      description: A new service
+      operationId: Get-housing-application-ServiceRequestStatus
       parameters:
         - name: jobId
           in: path
@@ -81,34 +115,179 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/serviceRequestStatus'
-  /api/service-requests/report-asb/v1:
+  /api/service-requests/antisocial-behaviour/v1:
     post:
-      summary: Report Anti-Social Behaviour
-      description: Use this service to report anti-social behaviour
-      operationId: Create-report-asb-ServiceRequest
+      summary: Report antisocial behaviour or hate crime
+      description: "If there is somebody in immediate danger contact the Police on 999.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because these are needed to pursue legal or enforcement action.\n\nIf you want to report domestic noise nuisance then refer to our Domestic Noise Nuisance page. There is no option to report noise nuisance on this form.\n\nThe details we will ask for are:\n\n    name\n    address\n    phone number\n    email address\n\nIf you choose to remain anonymous, we will do our best to address the issue but we will not be able to take any action against the person responsible.\n\nIf you have no information on the person responsible, you will still be given the option to provide your details as it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history.\n"
+      operationId: Create-antisocial-behaviour-ServiceRequest
+
+      x-gds:
+        formId: antisocial-behaviour-v1
+        requiredQuestions:
+          - ReporterType
+          - IncidentDescription
+          - IncidentDate
+          - LocationDetails
+          - Anonymity
+        pages:
+          - page: 1
+            title: About the incident
+            questions: [ASBCategory, ReporterType, IncidentDescription, IncidentDate]
+          - page: 2
+            title: Where it happened
+            questions: [LocationDetails]
+          - page: 3
+            title: Your details
+            questions: [Anonymity, CustomerFirstName, CustomerLastName, CustomerDateOfBirth]
+
       requestBody:
         description: JSON request body containing details of the new service request
         content:
           application/json:
             schema:
               required:
-                - reported-by-name
-                - address
-                - notes
+                - ASBCategory
+                - ReporterType
+                - IncidentDescription
+                - LocationDetails
+                - IncidentDate
+                - ResponsiblePartyKnown
+                - ResponsiblePartyUnder18
+                - ResponsiblePartyInformation
+                - SelfResolveAttempted
+                - ReportedToPolice
+                - Anonymity
+                - AnyWitnesses
+                - HousingSituation
+                - EmailSummary
               type: object
               properties:
-                reported-by-name:
+                ASBCategory:
+                  enum:
+                    - 'Abuse, intimidation or harassment'
+                    - Threat or use of violence
+                    - Criminal behaviour
+                    - Domestic violence or abuse
+                    - Drug or alcohol issues
+                    - Hate crime
+                    - Neighbour dispute
+                    - Prostitution or sexual acts
+                    - Vehicle related nuisance
                   type: string
-                  description: Reporting contact
-                report-against-name:
+                  description: What type of antisocial behaviour are you reporting?
+                ReporterType:
+                  enum:
+                    - I am the victim
+                    - For someone else
                   type: string
-                  description: Reported contact - if known
-                address:
+                  description: ' Are you the victim of the antisocial behaviour or are you reporting for someone else?'
+                IncidentDescription:
                   type: string
-                  description: Address of reported behaviour
-                notes:
+                  description: ' Tell us about the incident that you are reporting '
+                LocationDetails:
                   type: string
-                  description: Notes
+                  description: Provide as much information as you can about where the incident happened
+                IncidentDate:
+                  type: string
+                  description: ' Tell us the date the incident happened'
+                  format: date
+                ResponsiblePartyKnown:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Do you know, or can you describe, who is responsible for the incident?'
+                ResponsiblePartyUnder18:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' As far as you know, are they under 18?'
+                ResponsiblePartyInformation:
+                  type: string
+                  description: ' Tell us what you know about them '
+                SelfResolveAttempted:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Have you tried to resolve this issue yourself?'
+                ReportedToPolice:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Have you reported this incident to the police?'
+                CrimRefNumber:
+                  type: string
+                  description: 'If Yes, Provide your crime reference number'
+                Anonymity:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Do you wish to remain anonymous?'
+                CustomerFirstName:
+                  type: string
+                  description: First name
+                  x-gds:
+                    title: First name
+                    fieldType: text
+                    hint: As shown on official documents
+                    required: false
+                    errorMessage: Enter your first name
+                    page: 3
+                    order: 1
+                CustomerLastName:
+                  type: string
+                  description: Last name
+                  x-gds:
+                    title: Last name
+                    fieldType: text
+                    hint: As shown on official documents
+                    required: false
+                    errorMessage: Enter your last name
+                    page: 3
+                    order: 2
+                CustomerDateOfBirth:
+                  type: string
+                  format: date
+                  description: Date of birth
+                  x-gds:
+                    title: Date of birth
+                    fieldType: date
+                    hint: For example, 31 12 1980
+                    required: false
+                    errorMessage: Enter a real date of birth in DD MM YYYY format
+                    page: 3
+                    order: 3
+                CustomerAddress:
+                  type: string
+                  description: ' What is your address?'
+                AnyWitnesses:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Are there any other witnesses?'
+                WitnessDetails:
+                  type: string
+                  description: ' Provide details of the other witnesses 7'
+                HousingSituation:
+                  enum:
+                    - Leeds City Council tenant
+                    - Housing association tenant
+                    - Private rented tenant
+                    - Owner occupier
+                    - Other
+                  type: string
+                  description: ' What is your current housing situation?'
+                EmailSummary:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Would you like a summary of your report to be emailed to you?'
               additionalProperties: false
         required: true
       responses:
@@ -124,11 +303,939 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/serviceRequestStatus'
-  '/api/service-requests/report-asb/v1/{jobId}/status':
+  '/api/service-requests/antisocial-behaviour/v1/{jobId}/status':
     get:
-      summary: Report Anti-Social Behaviour
-      description: Use this service to report anti-social behaviour
-      operationId: Get-report-asb-ServiceRequestStatus
+      summary: Report antisocial behaviour or hate crime
+      description: "If there is somebody in immediate danger contact the Police on 999.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because these are needed to pursue legal or enforcement action.\n\nIf you want to report domestic noise nuisance then refer to our Domestic Noise Nuisance page. There is no option to report noise nuisance on this form.\n\nThe details we will ask for are:\n\n    name\n    address\n    phone number\n    email address\n\nIf you choose to remain anonymous, we will do our best to address the issue but we will not be able to take any action against the person responsible.\n\nIf you have no information on the person responsible, you will still be given the option to provide your details as it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history.\n"
+      operationId: Get-antisocial-behaviour-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/roofless-tonight/v1:
+    post:
+      summary: Roofless tonight
+      description: A new service
+      operationId: Create-roofless-tonight-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - describethecustomerssituation
+                - havereferencenumber
+                - trigger
+                - actiontakenbycso
+                - actiontakenbylho
+              type: object
+              properties:
+                describethecustomerssituation:
+                  type: string
+                  description: Please describe the customer's situation and what has brought them in today
+                havereferencenumber:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Do they have a Customer Reference Number? (previously called Bidding Number)
+                referencenumber:
+                  type: string
+                  description: 'If yes, please provide it here'
+                hasanappointmentbeenmade:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: 'If no, has an appointment been made to complete a housing application?'
+                trigger:
+                  enum:
+                    - Eviction date is today
+                    - Asked to leave today by family or friends
+                    - Relationship breakdown
+                    - Domestic violence or threat of domestic violence
+                    - Not safe to return to their home (ASB/stalking)
+                    - NASS ending today
+                    - Currently sleeping rough
+                  type: string
+                  description: What has triggered the customer having no roof over their head tonight?
+                actiontakenbycso:
+                  enum:
+                    - Sent a 'Roofless Tonight' work queue in CATS to LHO assessors
+                    - Transferred the customer to the LHO Hub via QMatic
+                    - CSO has spoken directly to LHO - no work queue or transfer needed
+                    - Advised customer to go to Merrion (until 3pm)
+                    - Gave LHO phone number 0113 2224412 (3pm-4pm)
+                    - Referred to website for OOH emergency advice
+                  type: string
+                  description: What action have you taken as a CSO?
+                actiontakenbylho:
+                  enum:
+                    - Added to QMatic for Temporary Accommodation team
+                    - Added to QMatic for Emergency Assessment team
+                    - Added for NEH assessment
+                    - Customer already within LHO process
+                    - Customer ineligible for LHO support
+                  type: string
+                  description: What action have you taken as LHO?
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/roofless-tonight/v1/{jobId}/status':
+    get:
+      summary: Roofless tonight
+      description: A new service
+      operationId: Get-roofless-tonight-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/general-repairs/v1:
+    post:
+      summary: Repairs - General
+      description: A new service
+      operationId: Create-general-repairs-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - repairsgeneral
+                - typeofcontact
+                - avoidablecontact
+                - avoidablereason
+                - bitmo
+                - originofrequest
+                - besttocontact
+                - contactnumber
+                - reasonforcontact
+                - details
+              type: object
+              properties:
+                repairsgeneral:
+                  enum:
+                    - Repair raised (Log Only)
+                    - Housing Office notification
+                    - Responsive repairs (query/chase up work)
+                    - Surveyors appointment (query/chase up work)
+                    - Window safety enquiry
+                  type: string
+                  description: Repairs - General
+                typeofcontact:
+                  enum:
+                    - Face to Face contact
+                    - Telephone Contact
+                    - Other (Specify Below)
+                  type: string
+                  description: Has the customer contacted via telephone or face to face (Hubs / Front desk)
+                othercontact:
+                  type: string
+                  description: Other form of customer contact
+                avoidablecontact:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Has the customer contacted us about the matter before ie; Chasing a repair
+                avoidablereason:
+                  enum:
+                    - Lack of / breakdow in communication
+                    - Follow on action not taken
+                    - Missed appointment / disputed access
+                    - Unhappy at standard of work
+                    - Job not started/completed / Incorrect operative/officer
+                    - Not applicable
+                    - Other (specify below)
+                  type: string
+                  description: Why was the contact avoidable
+                avoidablereasonother:
+                  type: string
+                  description: Other reason for avoidable contact?
+                bitmo:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Is this a BITMO tenant?
+                originofrequest:
+                  enum:
+                    - Tenant
+                    - Leaseholder / Leaseholder Rep
+                    - Friend / Relative / Neighbour
+                    - Service / Organisation
+                  type: string
+                  description: Who is making contact?
+                besttocontact:
+                  type: string
+                  description: Who is best to contact?
+                contactnumber:
+                  type: string
+                  description: Contact Number
+                reasonforcontact:
+                  enum:
+                    - Social Media
+                    - Leaflet / Advertisement
+                    - Service Promotion / Campaign
+                    - No
+                  type: string
+                  description: Are you having contact as a result of any of the following?
+                details:
+                  type: string
+                  description: What are the details of the enquiry?
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/general-repairs/v1/{jobId}/status':
+    get:
+      summary: Repairs - General
+      description: A new service
+      operationId: Get-general-repairs-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/overgrown-vegetation/v1:
+    post:
+      summary: Report a problem with overgrown vegetation
+      description: "Use this form to report overgrown vegetation which is causing an obstruction to a public footpath, the highway or a ginnel.\n\nDo not use this form to report problems with a hedge between two neighbouring private properties. For further information please use the High hedges page.\n\nEnsure that you provide adequate information so that we can investigate your report.\n\nWe regret we are unable to provide updates on the progress of reports of this kind.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Create-overgrown-vegetation-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - problemaddress
+                - exactlocation
+                - natureofproblem
+                - anonymous
+                - summaryemail
+              type: object
+              properties:
+                problemaddress:
+                  $ref: '#/components/schemas/address'
+                exactlocation:
+                  type: string
+                  description: Describe the location in more detail
+                natureofproblem:
+                  enum:
+                    - 'Public footpath '
+                    - 'Highway '
+                    - Ginnel
+                  type: string
+                  description: What is the vegetation obstructing?
+                furtherinformation:
+                  type: string
+                  description: Describe the issue in more detail
+                anonymous:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Do you wish to remain anonymous?
+                customerdetails:
+                  $ref: '#/components/schemas/customer'
+                contactdetails:
+                  $ref: '#/components/schemas/contactdetails'
+                summaryemail:
+                  enum:
+                    - 'Yes, I would like to receive a summary by email'
+                    - No
+                  type: string
+                  description: Would you like a summary of your report to be emailed to you?
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/overgrown-vegetation/v1/{jobId}/status':
+    get:
+      summary: Report a problem with overgrown vegetation
+      description: "Use this form to report overgrown vegetation which is causing an obstruction to a public footpath, the highway or a ginnel.\n\nDo not use this form to report problems with a hedge between two neighbouring private properties. For further information please use the High hedges page.\n\nEnsure that you provide adequate information so that we can investigate your report.\n\nWe regret we are unable to provide updates on the progress of reports of this kind.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Get-overgrown-vegetation-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/road-surface-damage/v1:
+    post:
+      summary: Report a pothole or damaged road surface
+      description: "We can only deal with damage or defects to highways within the Leeds City Council boundaries. We do not deal with any damage or defects to Motorways. All damage or defects on Motorways should be reported to National Highways on 0300 123 5000.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Create-road-surface-damage-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - nature
+                - address
+                - exactlocation
+                - pedestriancrossing
+                - size
+                - depth
+                - anonymous
+                - emailsummary
+              type: object
+              properties:
+                nature:
+                  enum:
+                    - Pothole(s)
+                    - Sunken tarmac
+                    - Missing paving blocks or flags
+                    - General surface damage
+                  type: string
+                  description: What is the nature of the problem?
+                address:
+                  $ref: '#/components/schemas/address'
+                exactlocation:
+                  type: string
+                  description: ' Describe the location in more detail '
+                pedestriancrossing:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Is the problem on a pedestrian crossing?
+                size:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Is the area larger than a dinner plate?
+                depth:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Is the depth greater than 40mm/ 4cm 1.6 inches?
+                furtherinformation:
+                  type: string
+                  description: Describe the problem in more detail
+                anonymous:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Do you wish to remain anonymous?'
+                customerdetails:
+                  $ref: '#/components/schemas/customer'
+                contactdetails:
+                  $ref: '#/components/schemas/contactdetails'
+                emailsummary:
+                  enum:
+                    - 'Yes, I would like to receive a summary by email'
+                    - No
+                  type: string
+                  description: Would you like a summary of your report to be emailed to you?
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/road-surface-damage/v1/{jobId}/status':
+    get:
+      summary: Report a pothole or damaged road surface
+      description: "We can only deal with damage or defects to highways within the Leeds City Council boundaries. We do not deal with any damage or defects to Motorways. All damage or defects on Motorways should be reported to National Highways on 0300 123 5000.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Get-road-surface-damage-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/facing-homelessness/v1:
+    post:
+      summary: Facing homelessness
+      description: Facing homelessness
+      operationId: Create-facing-homelessness-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - describethecustomerssituation
+                - havereferencenumber
+                - trigger
+                - actiontakenbycso
+                - actiontakenbylho
+              type: object
+              properties:
+                describethecustomerssituation:
+                  type: string
+                  description: Please describe the customer's situation and what has brought them in today
+                havereferencenumber:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Do they have a Customer Reference Number? (previously called Bidding Number)
+                referencenumber:
+                  type: string
+                  description: 'If yes, please provide it here'
+                hasanappointmentbeenmade:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: 'If no, has an appointment been made to complete a housing application?'
+                trigger:
+                  enum:
+                    - Eviction notice (Section 21) received
+                    - Section 8 (4 week) notice received
+                    - Relationship breakdown
+                    - Asked to leave by family or friends
+                    - Condition of the property
+                    - Struggling to pay rent
+                    - Domestic violence or threat of domestic violence
+                    - ASB/stalking
+                    - Temporary accommodation due to end soon
+                    - Notice to leave NASS
+                    - Family reunion
+                    - Care leaver
+                    - Leaving hospital/ hostel
+                    - Chasing caseworker
+                  type: string
+                  description: What has triggered the customer facing homelessness?
+                actiontakenbycso:
+                  enum:
+                    - Sent a 'Facing homelessness' work queue in CATS to LHO Assessors
+                    - Advice and guidance given by CSO - no work queue needed
+                    - CSO has spoken directly to LHO - no work queue needed
+                  type: string
+                  description: Action taken by CSO
+                actiontakenbylho:
+                  enum:
+                    - Added to QMatic for Temporary Accommodation team
+                    - Added to QMatic for Emergency Assessment team
+                    - Added for NEH assessment
+                    - Customer already within LHO process
+                    - Customer ineligible for LHO support
+                  type: string
+                  description: Action taken by LHO
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/facing-homelessness/v1/{jobId}/status':
+    get:
+      summary: Facing homelessness
+      description: Facing homelessness
+      operationId: Get-facing-homelessness-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/missed-collection/v1:
+    post:
+      summary: Report a missed bin collection
+      description: Use this service to report a missed bin collection
+      operationId: Create-missed-collection-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - incidentdate
+                - address
+                - label
+                - isstreetmiss
+                - youraddress
+                - customer
+                - emailsummary
+              type: object
+              properties:
+                incidentdate:
+                  type: string
+                  description: What date was the bin missed?
+                  format: date
+                address:
+                  $ref: '#/components/schemas/address'
+                label:
+                  enum:
+                    - ' Brown garden waste bin'
+                    - Black general waste bin
+                    - Food bin
+                    - Green recycling bin
+                  type: string
+                  description: ' Which bin was missed?'
+                isstreetmiss:
+                  enum:
+                    - 'Yes, some of my neighbours'' bins were missed'
+                    - 'No, only my bin was missed'
+                  type: string
+                  description: ' Were any other bins missed on your street?'
+                furtherinformation:
+                  type: string
+                  description: Is there any other information you want to give us?
+                youraddress:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Do you live at this address?
+                customer:
+                  $ref: '#/components/schemas/customer'
+                emailsummary:
+                  enum:
+                    - 'Yes, I would like to receive a summary by email'
+                    - 'No '
+                  type: string
+                  description: ' Would you like a summary of your report to be emailed to you?'
+                contactdetails:
+                  $ref: '#/components/schemas/contactdetails'
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/missed-collection/v1/{jobId}/status':
+    get:
+      summary: Report a missed bin collection
+      description: Use this service to report a missed bin collection
+      operationId: Get-missed-collection-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/replacement-bin/v1:
+    post:
+      summary: Request a new or replacement bin
+      description: "Charges apply for some new and replacement bins. You will need a valid credit or debit card to complete the form if you are requesting a black or brown bin.\n\nIf you have moved into a new build property the developer is responsible for providing your bins. If you are a property developer looking to order bins for new properties then refer to our Request Bins page.\n\nCheck our Request Bins page to see what our current delivery time is. be assured that we are working hard to fulfil all requests.\n\nThis form will ask for your details as these are needed for us to process this request.\n\nThe details we require are:\n\n    Name\n    Address\n    Phone number\n    Email\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history.\n"
+      operationId: Create-replacement-bin-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - deliveryaddress
+                - bintype
+                - reason
+                - existingbins
+                - customer
+                - address
+                - contactdetails
+                - emailsummary
+              type: object
+              properties:
+                deliveryaddress:
+                  $ref: '#/components/schemas/address'
+                bintype:
+                  enum:
+                    - ' Brown bin'
+                    - ' Black bin'
+                    - ' Green bin'
+                  type: string
+                  description: What type of bin are you requesting?
+                reason:
+                  enum:
+                    - ' My bin is missing or stolen'
+                    - ' My bin is damaged'
+                    - ' I would like an additional bin'
+                  type: string
+                  description: Why do you need a bin?
+                existingbins:
+                  type: number
+                  description: How many bins of this type do you have?
+                customer:
+                  $ref: '#/components/schemas/contactdetails'
+                address:
+                  $ref: '#/components/schemas/address'
+                contactdetails:
+                  $ref: '#/components/schemas/customer'
+                emailsummary:
+                  enum:
+                    - ' Yes, I would like to receive a summary by email'
+                    - No
+                  type: string
+                  description: ' Would you like a summary of your report to be emailed to you?'
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/replacement-bin/v1/{jobId}/status':
+    get:
+      summary: Request a new or replacement bin
+      description: "Charges apply for some new and replacement bins. You will need a valid credit or debit card to complete the form if you are requesting a black or brown bin.\n\nIf you have moved into a new build property the developer is responsible for providing your bins. If you are a property developer looking to order bins for new properties then refer to our Request Bins page.\n\nCheck our Request Bins page to see what our current delivery time is. be assured that we are working hard to fulfil all requests.\n\nThis form will ask for your details as these are needed for us to process this request.\n\nThe details we require are:\n\n    Name\n    Address\n    Phone number\n    Email\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history.\n"
+      operationId: Get-replacement-bin-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/fly-tipping/v1:
+    post:
+      summary: Report fly tipping
+      description: "The council has responsibility for acting on reports of fly tipping on public land to both remove the waste and to locate and prosecute the offenders.\n\nWhere the waste is hazardous the council has a responsibility to ensure public safety until such time as the waste can be removed.\n\nHowever, the council cannot remove fly tipping that has been dumped on privately maintained land so instead may have to work with land/property owners to remove the waste.\n\nIf you are reporting an abandoned vehicle then please use the Report an Abandoned Vehicle form.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details as it is sometimes useful or necessary for us to contact you to discuss your report further. Your details will remain confidential.\n\nThe details we will ask for are:\n\n    name\n    address\n    phone number\n    email address\n\nIf you choose to remain anonymous, we might not be able to take any action against the person responsible.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Create-fly-tipping-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - wasteaddress
+                - locationdescription
+                - quantity
+                - wastetype
+                - hazardous
+                - landtype
+                - remainanonymous
+                - emailsummary
+              type: object
+              properties:
+                wasteaddress:
+                  $ref: '#/components/schemas/address'
+                locationdescription:
+                  type: string
+                  description: 'Provide a description of the location '
+                quantity:
+                  enum:
+                    - Single item
+                    - Single bag
+                    - Car boot load or less
+                    - More than a car boot load
+                    - Small van load
+                    - 'Tipper lorry load '
+                    - Transit van load
+                  type: string
+                  description: How much waste is there?
+                wastetype:
+                  enum:
+                    - Asbestos
+                    - Black bags (commercial)
+                    - Black bags (household)
+                    - Chemical drums / oil / fuel
+                    - Clinical
+                    - Commercial / demolition / excavation
+                    - Green organic matter (grass cuttings / leaves etc)
+                    - Tyres
+                    - Vehicle
+                    - White goods
+                    - Other commercial waste
+                    - Other electrical
+                    - Other household waste
+                    - Other unknown
+                  type: string
+                  description: What type of waste is it?
+                hazardous:
+                  enum:
+                    - Yes
+                    - No
+                    - Unsure
+                  type: string
+                  description: Does the waste contain hazardous material?
+                landtype:
+                  enum:
+                    - Commercial land
+                    - Agricultural / farm land
+                    - Cemetery
+                    - Ginnel / walkway
+                    - Road / pavement
+                    - Land on council estate
+                    - Park
+                    - Public right of way
+                    - Recreation ground
+                    - River / stream / beck
+                    - Sports field
+                    - Waste ground
+                    - Woodland
+                    - Railway
+                    - Other
+                    - Unsure
+                  type: string
+                  description: What type of land is the waste on?
+                suspect:
+                  $ref: '#/components/schemas/suspected-fly-tipper'
+                suspectvechicle:
+                  $ref: '#/components/schemas/car-details'
+                dateofincident:
+                  type: string
+                  description: Date of incident
+                  format: date
+                timeofincident:
+                  type: string
+                  description: Time of incident
+                furtherinformation:
+                  type: string
+                  description: 'Is there any obvious evidence in the waste that might identify where it has come from? Please describe '
+                remainanonymous:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: Do you wish to remain anonymous?
+                customerdetails:
+                  $ref: '#/components/schemas/customer'
+                address:
+                  $ref: '#/components/schemas/address'
+                contactdetails:
+                  $ref: '#/components/schemas/contactdetails'
+                emailsummary:
+                  enum:
+                    - ' Yes, I would like to receive a summary by email'
+                    - No
+                  type: string
+                  description: ' Would you like a summary of your report to be emailed to you?'
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/fly-tipping/v1/{jobId}/status':
+    get:
+      summary: Report fly tipping
+      description: "The council has responsibility for acting on reports of fly tipping on public land to both remove the waste and to locate and prosecute the offenders.\n\nWhere the waste is hazardous the council has a responsibility to ensure public safety until such time as the waste can be removed.\n\nHowever, the council cannot remove fly tipping that has been dumped on privately maintained land so instead may have to work with land/property owners to remove the waste.\n\nIf you are reporting an abandoned vehicle then please use the Report an Abandoned Vehicle form.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details as it is sometimes useful or necessary for us to contact you to discuss your report further. Your details will remain confidential.\n\nThe details we will ask for are:\n\n    name\n    address\n    phone number\n    email address\n\nIf you choose to remain anonymous, we might not be able to take any action against the person responsible.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Get-fly-tipping-ServiceRequestStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  /api/service-requests/pavement/v1:
+    post:
+      summary: Report a problem with a pavement
+      description: "If you wish to report a problem with manhole or gully cover on a pavement, use the Report a damaged or missing manhole or gully cover form.\n\nIf you wish to report a problem with a right of way, footpath, bridleway or byway, you can find more information on Report a problem with a public right of way.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further or to pursue enforcement action.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Create-pavement-ServiceRequest
+      requestBody:
+        description: JSON request body containing details of the new service request
+        content:
+          application/json:
+            schema:
+              required:
+                - address
+                - exactlocation
+                - surface
+                - natureofproblem
+                - furtherinformation
+                - anonymous
+              type: object
+              properties:
+                address:
+                  $ref: '#/components/schemas/address'
+                exactlocation:
+                  type: string
+                  description: Describe the location in more detail
+                surface:
+                  enum:
+                    - Tarmac or general road surface
+                    - Paving flags
+                    - Kerbs
+                    - 'Manholes, cellar grates and other covers'
+                  type: string
+                  description: What does the problem relate to?
+                natureofproblem:
+                  enum:
+                    - Missing manhole or other cover
+                    - Issue with cellar grate
+                  type: string
+                  description: ' What is the nature of the problem?'
+                furtherinformation:
+                  type: string
+                  description: Describe the missing manhole or other cover in more detail
+                anonymous:
+                  enum:
+                    - Yes
+                    - No
+                  type: string
+                  description: ' Do you wish to remain anonymous?'
+                customerdetails:
+                  $ref: '#/components/schemas/customer'
+                contactdetails:
+                  $ref: '#/components/schemas/contactdetails'
+                emailsummary:
+                  enum:
+                    - 'Yes, I would like to receive a summary by email'
+                    - No
+                  type: string
+                  description: Would you like a summary of your report to be emailed to you?
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+        '400':
+          description: Response message indicating the reason for failure of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/serviceRequestStatus'
+  '/api/service-requests/pavement/v1/{jobId}/status':
+    get:
+      summary: Report a problem with a pavement
+      description: "If you wish to report a problem with manhole or gully cover on a pavement, use the Report a damaged or missing manhole or gully cover form.\n\nIf you wish to report a problem with a right of way, footpath, bridleway or byway, you can find more information on Report a problem with a public right of way.\n\nThis form will ask if you would like to provide your details or if you wish to remain anonymous.\n\nWe ask for your details because it is sometimes useful or necessary for us to contact you to discuss your report further or to pursue enforcement action.\n\nIf you are an account holder and you choose to provide your details, a record of this report will be saved in your account history."
+      operationId: Get-pavement-ServiceRequestStatus
       parameters:
         - name: jobId
           in: path
@@ -144,28 +1251,111 @@ paths:
                 $ref: '#/components/schemas/serviceRequestStatus'
 components:
   schemas:
-    contact:
+    contactdetails:
       type: object
       properties:
-        first-name:
+        homephone:
           type: string
-          description: Given name
-        last-name:
+          description: Home Phone number
+        workphone:
           type: string
-          description: Surname
-        email:
+          description: Work Phone number
+        mobilephone:
           type: string
-          description: eMail address
-        telephone:
+          description: Mobile Phone number
+        emailaddress:
           type: string
-          description: Phone number
-        dob:
+          description: Email Address
+        preferred:
+          enum:
+            - Home Phone number
+            - Work Phone number
+            - Mobile Phone number
+            - Email Address
           type: string
-          description: Date of Birth
+          description: Preferred method of contact
+      additionalProperties: false
+    customer:
+      type: object
+      properties:
+        firstname:
+          type: string
+          description: First Name
+          x-gds:
+            title: First name
+            fieldType: text
+            hint: As shown on official documents
+            required: true
+            errorMessage: Enter your first name
+            page: 1
+            order: 1
+        lastname:
+          type: string
+          description: Last Name
+          x-gds:
+            title: Last name
+            fieldType: text
+            hint: As shown on official documents
+            required: true
+            errorMessage: Enter your last name
+            page: 1
+            order: 2
+        dateofbirth:
+          type: string
           format: date
-        address:
+          description: Date of birth
+          x-gds:
+            title: Date of birth
+            fieldType: date
+            hint: For example, 31 12 1980
+            required: true
+            errorMessage: Enter a real date of birth in DD MM YYYY format
+            page: 1
+            order: 3
+      additionalProperties: false
+    address:
+      type: object
+      properties:
+        postcode:
           type: string
-          description: Home address
+          description: Postcode
+        line1:
+          type: string
+          description: Address Line 1
+        line2:
+          type: string
+          description: Address Line 2
+        town:
+          type: string
+          description: Town
+        city:
+          type: string
+          description: City
+        county:
+          type: string
+          description: County
+      additionalProperties: false
+    suspected-fly-tipper:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Persons Name
+        address:
+          $ref: '#/components/schemas/address'
+        description:
+          type: string
+          description: Description of person
+      additionalProperties: false
+    car-details:
+      type: object
+      properties:
+        registration:
+          type: string
+          description: Vehicle registration
+        makemodel:
+          type: string
+          description: 'Vehicle make, model and colour'
       additionalProperties: false
     serviceRequest:
       type: object
@@ -194,4 +1384,4 @@ components:
       name: code
       in: query
 security:
-  - api_key: []
+  - api_key: [ ]
