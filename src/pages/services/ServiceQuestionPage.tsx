@@ -6,6 +6,7 @@ import {
   DateField,
   ErrorSummary,
   ErrorText,
+  H2,
   HintText,
   InputField,
   Paragraph,
@@ -61,6 +62,10 @@ const isComplete = (question: ServiceQuestion, value: unknown) => {
 };
 
 const getErrorMessage = (question: ServiceQuestion) => {
+  if (question.errorMessage) {
+    return question.errorMessage;
+  }
+
   switch (question.type) {
     case 'checkbox':
       return 'You must confirm this before continuing.';
@@ -96,9 +101,18 @@ export const ServiceQuestionPage = () => {
   const isLastStep = stepIndex === service.questions.length - 1;
   const targetId = question.type === 'date' ? `${fieldId}-day` : fieldId;
 
+  const currentPage = useMemo(() => {
+    if (!service.pages) {
+      return undefined;
+    }
+
+    return service.pages.find((page) => page.questions.includes(question.id));
+  }, [service.pages, question.id]);
+
+  const hintContent = question.hint ?? question.description;
   const hint = useMemo(
-    () => (question.description ? <HintText id={`${fieldId}-hint`}>{question.description}</HintText> : undefined),
-    [fieldId, question.description]
+    () => (hintContent ? <HintText id={`${fieldId}-hint`}>{hintContent}</HintText> : undefined),
+    [fieldId, hintContent]
   );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -205,7 +219,7 @@ export const ServiceQuestionPage = () => {
               id={fieldId}
               checked={value === true}
               onChange={handleCheckboxChange}
-              hint={question.description}
+              hint={hintContent}
             >
               {question.label}
             </Checkbox>
@@ -235,7 +249,7 @@ export const ServiceQuestionPage = () => {
         return (
           <DateField
             errorText={error}
-            hintText={question.description}
+            hintText={hintContent}
             inputNames={{
               day: `${fieldId}-day`,
               month: `${fieldId}-month`,
@@ -303,7 +317,13 @@ export const ServiceQuestionPage = () => {
           onHandleErrorClick={handleErrorClick}
         />
       )}
-      <Paragraph>Answer this question to continue.</Paragraph>
+      {currentPage?.title && <H2>{currentPage.title}</H2>}
+      {currentPage?.description ? (
+        <Paragraph>{currentPage.description}</Paragraph>
+      ) : (
+        <Paragraph>Answer this question to continue.</Paragraph>
+      )}
+      {currentPage?.hint && <HintText>{currentPage.hint}</HintText>}
       {renderField()}
       <Button type="submit">Continue</Button>
     </form>
