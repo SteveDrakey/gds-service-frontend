@@ -1,8 +1,10 @@
-import { Button, H2, InsetText, Link, Paragraph, VisuallyHidden } from 'govuk-react';
+import { Fragment, useMemo } from 'react';
+import { Button, H2, H3, HintText, InsetText, Link, Paragraph, VisuallyHidden } from 'govuk-react';
 import styled from 'styled-components';
 import { Link as RouterLink } from 'react-router-dom';
 import { useServiceForm } from '../../state/ServiceFormContext';
 import type { DateAnswerValue, ServiceQuestion } from '../../types/service';
+import { buildServiceSteps, createQuestionStepIndexMap } from '../../utils/serviceSteps';
 
 const SummaryList = styled.dl`
   margin: 0 0 2rem;
@@ -92,12 +94,15 @@ const formatAnswer = (value: unknown, question: ServiceQuestion) => {
 export const ServiceSummaryPage = () => {
   const { service, answers } = useServiceForm();
 
-  return (
-    <form onSubmit={(event) => event.preventDefault()} noValidate>
-      <H2>Check your answers before submitting</H2>
-      <Paragraph>Make sure the information below is correct. Use the change links to update any answers.</Paragraph>
-      <SummaryList>
-        {service.questions.map((question, index) => (
+  const steps = useMemo(() => buildServiceSteps(service), [service]);
+  const questionIndexMap = useMemo(() => createQuestionStepIndexMap(steps), [steps]);
+
+  const renderSummaryRows = (questions: ServiceQuestion[]) => (
+    <SummaryList>
+      {questions.map((question) => {
+        const index = questionIndexMap.get(question.id) ?? 0;
+
+        return (
           <SummaryRow key={question.id}>
             <SummaryKey>{question.label}</SummaryKey>
             <SummaryValue>{formatAnswer(answers[question.id], question)}</SummaryValue>
@@ -108,8 +113,49 @@ export const ServiceSummaryPage = () => {
               </ChangeLink>
             </SummaryActions>
           </SummaryRow>
-        ))}
-      </SummaryList>
+        );
+      })}
+    </SummaryList>
+  );
+
+  const renderedQuestionIds = new Set<string>();
+
+  const pageSections = service.pages
+    ?.map((page) => {
+      const pageQuestions = page.questions
+        .map((questionId) => service.questions.find((question) => question.id === questionId))
+        .filter((question): question is ServiceQuestion => Boolean(question));
+
+      if (pageQuestions.length === 0) {
+        return null;
+      }
+
+      pageQuestions.forEach((question) => renderedQuestionIds.add(question.id));
+
+      return (
+        <Fragment key={`page-${page.number}`}>
+          {page.title && <H3>{page.title}</H3>}
+          {page.description && <Paragraph>{page.description}</Paragraph>}
+          {page.hint && <HintText>{page.hint}</HintText>}
+          {renderSummaryRows(pageQuestions)}
+        </Fragment>
+      );
+    })
+    .filter(Boolean);
+
+  const remainingQuestions = service.questions.filter((question) => !renderedQuestionIds.has(question.id));
+
+  return (
+    <form onSubmit={(event) => event.preventDefault()} noValidate>
+      <H2>Check your answers before submitting</H2>
+      <Paragraph>Make sure the information below is correct. Use the change links to update any answers.</Paragraph>
+      {pageSections}
+      {remainingQuestions.length > 0 && (
+        <>
+          {pageSections && pageSections.length > 0 && <H3>Other questions</H3>}
+          {renderSummaryRows(remainingQuestions)}
+        </>
+      )}
       <InsetText>
         Submitting is not wired up in this prototype. Connect the submit button to your API once the service is ready.
       </InsetText>
