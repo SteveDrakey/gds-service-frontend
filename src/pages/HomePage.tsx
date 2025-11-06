@@ -13,6 +13,7 @@ import {
   WarningText
 } from 'govuk-react';
 import { useServiceDefinitions } from '../state/ServiceDefinitionsContext';
+import { PRIMARY_BLUE, PRIMARY_BLUE_HOVER } from '../styles/palette';
 
 const ServiceList = styled.div`
   display: grid;
@@ -67,7 +68,12 @@ export const HomePage = () => {
               <H2>{service.name}</H2>
               {service.summary && <Paragraph>{service.summary}</Paragraph>}
               {service.source === 'fallback' && <Tag tint="YELLOW">Fallback data</Tag>}
-              <Button as={RouterLink} to={`/services/${service.slug}/questions/0`}>
+              <Button
+                as={RouterLink}
+                to={`/services/${service.slug}/questions/0`}
+                buttonColour={PRIMARY_BLUE}
+                buttonHoverColour={PRIMARY_BLUE_HOVER}
+              >
                 Start now
               </Button>
             </ServiceCard>
