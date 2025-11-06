@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   Button,
@@ -6,6 +6,7 @@ import {
   DateField,
   ErrorSummary,
   ErrorText,
+  H2,
   HintText,
   InputField,
   Paragraph,
@@ -14,6 +15,7 @@ import {
 } from 'govuk-react';
 import { useServiceForm } from '../../state/ServiceFormContext';
 import type { DateAnswerValue, ServiceQuestion } from '../../types/service';
+import { buildServiceSteps } from '../../utils/serviceSteps';
 
 const normaliseId = (value: string, fallback: string) => {
   const cleaned = value.replace(/[^a-zA-Z0-9_-]+/g, '-');
@@ -61,6 +63,10 @@ const isComplete = (question: ServiceQuestion, value: unknown) => {
 };
 
 const getErrorMessage = (question: ServiceQuestion) => {
+  if (question.errorMessage) {
+    return question.errorMessage;
+  }
+
   switch (question.type) {
     case 'checkbox':
       return 'You must confirm this before continuing.';
@@ -79,63 +85,31 @@ export const ServiceQuestionPage = () => {
   const navigate = useNavigate();
   const { service, answers, updateAnswer } = useServiceForm();
 
+  const steps = useMemo(() => buildServiceSteps(service), [service]);
+
   if (Number.isNaN(stepIndex)) {
     return <Navigate to="." replace />;
   }
 
-  const question = service.questions[stepIndex];
+  const step = steps[stepIndex];
 
-  if (!question) {
+  if (!step) {
     return <Navigate to="../questions/0" replace />;
   }
 
-  const value = answers[question.id];
-  const [error, setError] = useState<string>();
-  const fieldId = useMemo(() => normaliseId(question.id, `question-${stepIndex + 1}`), [question.id, stepIndex]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const isLastStep = stepIndex === service.questions.length - 1;
-  const targetId = question.type === 'date' ? `${fieldId}-day` : fieldId;
+  useEffect(() => {
+    setErrors({});
+  }, [stepIndex]);
 
-  const hint = useMemo(
-    () => (question.description ? <HintText id={`${fieldId}-hint`}>{question.description}</HintText> : undefined),
-    [fieldId, question.description]
-  );
+  const fieldIds = useMemo(() => {
+    return new Map(
+      step.questions.map((question, index) => [question.id, normaliseId(question.id, `question-${stepIndex + 1}-${index + 1}`)])
+    );
+  }, [step.questions, stepIndex]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!isComplete(question, answers[question.id])) {
-      setError(getErrorMessage(question));
-      return;
-    }
-
-    setError(undefined);
-
-    if (isLastStep) {
-      navigate('../summary');
-    } else {
-      navigate(`../questions/${stepIndex + 1}`);
-    }
-  };
-
-  const handleTextChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setError(undefined);
-    updateAnswer(question.id, event.target.value);
-  };
-
-  const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setError(undefined);
-    updateAnswer(question.id, event.target.checked);
-  };
-
-  const handleDateChange = (next: DateAnswerValue) => {
-    setError(undefined);
-    updateAnswer(question.id, {
-      day: typeof next.day === 'string' ? next.day : '',
-      month: typeof next.month === 'string' ? next.month : '',
-      year: typeof next.year === 'string' ? next.year : ''
-    });
-  };
+  const isLastStep = stepIndex === steps.length - 1;
 
   const handleErrorClick = (targetName: string) => {
     const element = document.getElementById(targetName);
@@ -144,15 +118,76 @@ export const ServiceQuestionPage = () => {
     }
   };
 
-  const fieldMeta = useMemo(
-    () => ({
+  const clearError = useCallback((questionId: string) => {
+    setErrors((previous) => {
+      if (!previous[questionId]) {
+        return previous;
+      }
+
+      const next = { ...previous };
+      delete next[questionId];
+      return next;
+    });
+  }, []);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextErrors: Record<string, string> = {};
+
+    step.questions.forEach((question) => {
+      if (!isComplete(question, answers[question.id])) {
+        nextErrors[question.id] = getErrorMessage(question);
+      }
+    });
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+
+    if (isLastStep) {
+      navigate('../summary');
+    } else {
+      navigate(`../questions/${stepIndex + 1}`);
+    }
+  };
+
+  const handleTextChange = (
+    question: ServiceQuestion
+  ) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      clearError(question.id);
+      updateAnswer(question.id, event.target.value);
+    };
+
+  const handleCheckboxChange = (question: ServiceQuestion) => (event: ChangeEvent<HTMLInputElement>) => {
+    clearError(question.id);
+    updateAnswer(question.id, event.target.checked);
+  };
+
+  const handleDateChange = (question: ServiceQuestion) => (next: DateAnswerValue) => {
+    clearError(question.id);
+    updateAnswer(question.id, {
+      day: typeof next.day === 'string' ? next.day : '',
+      month: typeof next.month === 'string' ? next.month : '',
+      year: typeof next.year === 'string' ? next.year : ''
+    });
+  };
+
+  const renderField = (question: ServiceQuestion) => {
+    const fieldId = fieldIds.get(question.id) ?? normaliseId(question.id, question.id);
+    const hintContent = question.hint ?? question.description;
+    const hint = hintContent ? <HintText id={`${fieldId}-hint`}>{hintContent}</HintText> : undefined;
+    const error = errors[question.id];
+    const fieldMeta = {
       error,
       touched: Boolean(error)
-    }),
-    [error]
-  );
+    };
 
-  const renderField = () => {
+    const value = answers[question.id];
     const stringValue = typeof value === 'string' ? value : '';
 
     switch (question.type) {
@@ -166,7 +201,7 @@ export const ServiceQuestionPage = () => {
               name: question.id,
               value: stringValue,
               rows: 6,
-              onChange: handleTextChange,
+              onChange: handleTextChange(question),
               required: question.required,
               'aria-describedby': hint ? `${fieldId}-hint` : undefined
             }}
@@ -184,7 +219,7 @@ export const ServiceQuestionPage = () => {
               id: fieldId,
               name: question.id,
               value: stringValue,
-              onChange: handleTextChange,
+              onChange: handleTextChange(question),
               required: question.required,
               'aria-describedby': hint ? `${fieldId}-hint` : undefined
             }}
@@ -199,17 +234,12 @@ export const ServiceQuestionPage = () => {
         );
       case 'checkbox':
         return (
-          <>
+          <div>
             {error && <ErrorText>{error}</ErrorText>}
-            <Checkbox
-              id={fieldId}
-              checked={value === true}
-              onChange={handleCheckboxChange}
-              hint={question.description}
-            >
+            <Checkbox id={fieldId} checked={value === true} onChange={handleCheckboxChange(question)} hint={hintContent}>
               {question.label}
             </Checkbox>
-          </>
+          </div>
         );
       case 'number':
         return (
@@ -222,7 +252,7 @@ export const ServiceQuestionPage = () => {
               type: 'number',
               value: stringValue,
               inputMode: 'numeric',
-              onChange: handleTextChange,
+              onChange: handleTextChange(question),
               required: question.required,
               'aria-describedby': hint ? `${fieldId}-hint` : undefined
             }}
@@ -235,7 +265,7 @@ export const ServiceQuestionPage = () => {
         return (
           <DateField
             errorText={error}
-            hintText={question.description}
+            hintText={hintContent}
             inputNames={{
               day: `${fieldId}-day`,
               month: `${fieldId}-month`,
@@ -263,7 +293,7 @@ export const ServiceQuestionPage = () => {
             }}
             input={{
               value: dateValue,
-              onChange: handleDateChange
+              onChange: handleDateChange(question)
             }}
           >
             {question.label}
@@ -279,7 +309,7 @@ export const ServiceQuestionPage = () => {
               id: fieldId,
               name: question.id,
               value: stringValue,
-              onChange: handleTextChange,
+              onChange: handleTextChange(question),
               required: question.required,
               'aria-describedby': hint ? `${fieldId}-hint` : undefined
             }}
@@ -290,21 +320,36 @@ export const ServiceQuestionPage = () => {
     }
   };
 
+  const errorEntries = Object.entries(errors);
+
+  const errorSummaryItems = errorEntries.map(([questionId, message]) => {
+    const question = step.questions.find((item) => item.id === questionId);
+    const fieldId = fieldIds.get(questionId) ?? questionId;
+    const targetName = question?.type === 'date' ? `${fieldId}-day` : fieldId;
+
+    return {
+      targetName,
+      text: message
+    };
+  });
+
+  const pageDescription = step.page?.description
+    ? step.page.description
+    : step.questions.length > 1
+      ? 'Answer these questions to continue.'
+      : 'Answer this question to continue.';
+
   return (
     <form onSubmit={handleSubmit} noValidate>
-      {error && (
-        <ErrorSummary
-          errors={[
-            {
-              targetName: targetId,
-              text: error
-            }
-          ]}
-          onHandleErrorClick={handleErrorClick}
-        />
+      {errorSummaryItems.length > 0 && (
+        <ErrorSummary errors={errorSummaryItems} onHandleErrorClick={handleErrorClick} />
       )}
-      <Paragraph>Answer this question to continue.</Paragraph>
-      {renderField()}
+      {step.page?.title && <H2>{step.page.title}</H2>}
+      {pageDescription && <Paragraph>{pageDescription}</Paragraph>}
+      {step.page?.hint && <HintText>{step.page.hint}</HintText>}
+      {step.questions.map((question) => (
+        <div key={question.id}>{renderField(question)}</div>
+      ))}
       <Button type="submit">Continue</Button>
     </form>
   );
