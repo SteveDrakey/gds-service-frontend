@@ -42,46 +42,88 @@ paths:
               type: object
               properties:
                 describethecustomerssituation:
-                  type: string
-                  description: Please describe the customer's situation and what has brought them in today
+                    type: string
+                    description: Please describe the customer's situation and what has brought them in today
+                    x-gds:
+                      title: Describe the customer's situation
+                      fieldType: text
+                      required: true
+                      errorMessage: Tell us about the customer's situation
+                      page: 1
+                      order: 1
                 havereferencenumber:
-                  enum:
-                    - Yes
-                    - No
-                  type: string
-                  description: Do they have a Customer Reference Number? (previously called Bidding Number)
+                    enum:
+                      - Yes
+                      - No
+                    type: string
+                    description: Do they have a Customer Reference Number? (previously called Bidding Number)
+                    x-gds:
+                      title: Do they have a Customer Reference Number?
+                      fieldType: radio
+                      required: true
+                      errorMessage: Please select Yes or No
+                      page: 1
+                      order: 2
                 referencenumber:
-                  type: string
-                  description: 'If yes, please provide it here'
+                    type: string
+                    description: 'If yes, please provide it here'
+                    x-gds:
+                      title: Customer Reference Number
+                      fieldType: text
+                      required: false
+                      errorMessage: Please provide the reference number if you have one
+                      page: 1
+                      order: 3
                 hasanappointmentbeenmade:
-                  enum:
-                    - Yes
-                    - No
-                  type: string
-                  description: 'If no, has an appointment been made to complete a housing application?'
+                    enum:
+                      - Yes
+                      - No
+                    type: string
+                    description: 'If no, has an appointment been made to complete a housing application?'
+                    x-gds:
+                      title: Has an appointment been made to complete a housing application?
+                      fieldType: radio
+                      required: false
+                      errorMessage: Please select Yes or No
+                      page: 1
+                      order: 4
                 trigger:
-                  enum:
-                    - Reset application login details
-                    - Supported to complete application
-                    - Proofs or documents received
-                    - Priority extension
-                    - Application renewal
-                    - Change in housing situation
-                    - Chasing application status
-                    - Unhappy with LHO decision
-                    - General advice
-                  type: string
-                  description: What is the customer's enquiry about their housing application?
+                    enum:
+                      - Reset application login details
+                      - Supported to complete application
+                      - Proofs or documents received
+                      - Priority extension
+                      - Application renewal
+                      - Change in housing situation
+                      - Chasing application status
+                      - Unhappy with LHO decision
+                      - General advice
+                    type: string
+                    description: What is the customer's enquiry about their housing application?
+                    x-gds:
+                      title: What is the customer's enquiry about their housing application?
+                      fieldType: select
+                      required: true
+                      errorMessage: Please select the enquiry type
+                      page: 1
+                      order: 5
                 actiontakenbycso:
-                  enum:
-                    - Sent an 'Housing application' work queue in CATS to LHO Assessors
-                    - Sent an 'Housing application' work queue in CATS to Housing office
-                    - Advice and guidance given by CSO - no work queue needed
-                    - CSO has spoken directly to LHO - no work queue needed
-                    - Appointment booked
-                    - Action completed in Abritas
-                  type: string
-                  description: Action taken by CSO
+                    enum:
+                      - Sent an 'Housing application' work queue in CATS to LHO Assessors
+                      - Sent an 'Housing application' work queue in CATS to Housing office
+                      - Advice and guidance given by CSO - no work queue needed
+                      - CSO has spoken directly to LHO - no work queue needed
+                      - Appointment booked
+                      - Action completed in Abritas
+                    type: string
+                    description: Action taken by CSO
+                    x-gds:
+                      title: Action taken by CSO
+                      fieldType: select
+                      required: false
+                      errorMessage: Please select the action taken
+                      page: 1
+                      order: 6
               additionalProperties: false
         required: true
       responses:
@@ -342,6 +384,13 @@ paths:
                 describethecustomerssituation:
                   type: string
                   description: Please describe the customer's situation and what has brought them in today
+                  x-gds:
+                    title: Describe the customer's situation
+                    fieldType: text
+                    required: true          # it’s in the schema’s required[]
+                    errorMessage: Tell us about the customer's situation
+                    page: 1
+                    order: 1                  
                 havereferencenumber:
                   enum:
                     - Yes
